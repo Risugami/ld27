@@ -1,0 +1,12 @@
+# Java
+*.class
+*.jar
+lib/
+out/
+
+# Intellij IDEA
+.idea/
+*.iml
+
+# Mac OSX
+.DS_Store
