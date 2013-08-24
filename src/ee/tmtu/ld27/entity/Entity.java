@@ -1,11 +1,17 @@
 package ee.tmtu.ld27.entity;
 
+import ee.tmtu.ld27.world.World;
 import ee.tmtu.libludum.graphics.SpriteBatch;
 
-public class Entity {
+public abstract class Entity {
 
-    public float x, y, xPrev, yPrev;
+    public float x, y, xPrev, yPrev, width, height;
     public boolean dead;
+    public World world;
+
+    public Entity(World world) {
+        this.world = world;
+    }
 
     public void update() {
 
