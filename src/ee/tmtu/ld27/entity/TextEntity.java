@@ -14,6 +14,7 @@ public class TextEntity extends Entity {
     public float weight;
     public Font font;
     public String word;
+    public boolean score;
 
     public TextEntity(World world, float x, float y, Font font, String word) {
         super(world);
@@ -21,7 +22,7 @@ public class TextEntity extends Entity {
         this.y = y;
         this.font = font;
         this.word = word;
-        this.weight = font.getWidth(word) / word.length() / 2;
+        this.weight = font.getWidth(word) / word.length() / 4 * (float)(Math.random() * 4);
         this.rotation = (float) (Math.random() * 360.);
         this.rotationSpeed = this.weight * .0005f;
     }
@@ -33,12 +34,15 @@ public class TextEntity extends Entity {
         this.prevRotation = this.rotation;
         this.rotation += this.rotationSpeed;
         this.y += this.weight;
-        if(this.y - this.font.getWidth(this.word) - this.font.lineheight > 800) this.y = this.yPrev = -(this.font.lineheight + this.font.getWidth(this.word));
+        if(this.y - this.font.getWidth(this.word) - this.font.lineheight > 800) {
+            if(score) this.dead = true;
+            this.y = this.yPrev = -(this.font.lineheight + this.font.getWidth(this.word));
+        }
     }
 
     @Override
     public void draw(SpriteBatch batch, double lerp) {
-        this.font.draw(batch, Shroom.lerp(this.xPrev, this.x, lerp), Shroom.lerp(this.yPrev, this.y, lerp), (float)Math.sin(Shroom.lerp(this.prevRotation, this.rotation, lerp)), this.word, new Color(251, 201, 148, 128));
+        this.font.draw(batch, Shroom.lerp(this.xPrev, this.x, lerp), Shroom.lerp(this.yPrev, this.y, lerp), (float)Math.sin(Shroom.lerp(this.prevRotation, this.rotation, lerp) * this.rotationSpeed) / 2, this.word, new Color(251, 201, 148, 128));
     }
 
 }

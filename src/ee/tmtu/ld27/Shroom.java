@@ -24,14 +24,25 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.util.Color;
 import org.lwjgl.util.ReadableColor;
 
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+
 import static org.lwjgl.opengl.GL11.*;
 
 public class Shroom extends Game {
 
-    public static final String TITLE = "Word\247io";
+    public String currentTitle;
+    public String title = "Word\247io";
+    public String hiscores = "Hi\247Scores";
+    public String roundx = "Round \247";
     public static final boolean[] keys = new boolean[256];
     public static final TweenManager TWEEN = new TweenManager();
+    public HiScoreList hiScoreList;
+    public Button toaster;
     public boolean inGame;
+    public boolean enteredName;
+    public String name;
     public Texture silhouette;
     public Texture blank;
     public SpriteBatch batch;
@@ -43,6 +54,8 @@ public class Shroom extends Game {
     public Font font;
     public World world;
     public Color overlay;
+    public int score;
+    public int currentRound;
 
     public Shroom(GameSettings settings) {
         super(settings);
@@ -75,22 +88,118 @@ public class Shroom extends Game {
         this.win = AssetManager.load("./assets/sound/win.wav", Sound.class);
         this.fail = AssetManager.load("./assets/sound/fail.wav", Sound.class);
         this.world = new World();
+        this.toaster = new Button("Enter a name to start the game", this.font);
+        this.toaster.padding = new Padding(10);
+        this.toaster.layout();
+        this.toaster.x = 400 - this.toaster.width / 2;
+        this.toaster.y = 20;
+        this.currentTitle = this.title;
         this.overlay = new Color(0, 0, 0, 255);
         Tween.to(overlay, ColorAccessor.A, 1.f).target(0.f).ease(TweenEquations.easeInOutQuad).start(Shroom.TWEEN);
         this.purple_retort.setLooping(true);
-        //Audio.play(this.purple_retort);
+        Audio.play(this.purple_retort);
+        this.hiScoreList = HiScoreList.from("./assets/data/hiscores.json");
 
         this.initMenu();
     }
 
+    public void prune(ArrayList<HiScore> list) {
+        Collections.sort(list);
+        if(list.size() > 5) {
+            for(int i = 5; i < list.size(); i++) {
+                list.remove(5);
+            }
+        }
+    }
+
+    public void saveHiScore(HiScore hiScore) {
+        switch (hiScore.round) {
+            case 1:
+                this.hiScoreList.round1.add(hiScore);
+                prune(this.hiScoreList.round1);
+                break;
+            case 2:
+                this.hiScoreList.round2.add(hiScore);
+                prune(this.hiScoreList.round2);
+                break;
+            case 3:
+                this.hiScoreList.round3.add(hiScore);
+                prune(this.hiScoreList.round3);
+                break;
+            case 4:
+                this.hiScoreList.round4.add(hiScore);
+                prune(this.hiScoreList.round4);
+                break;
+            case 5:
+                this.hiScoreList.round5.add(hiScore);
+                prune(this.hiScoreList.round5);
+                break;
+        }
+    }
+
+    public ArrayList<HiScore> getRoundHiScore(int round) {
+        switch (round) {
+            case 1:
+                return hiScoreList.round1;
+            case 2:
+                return hiScoreList.round2;
+            case 3:
+                return hiScoreList.round3;
+            case 4:
+                return hiScoreList.round4;
+            case 5:
+                return hiScoreList.round5;
+        }
+        return null;
+    }
+
+    public void initHiScoreRound(int round) {
+        this.root.clear();
+        this.world.entities.clear();
+        this.currentTitle = this.roundx + round;
+        this.inGame = false;
+
+        for(int i = 0; i < this.getRoundHiScore(round).size(); i++) {
+            prune(this.getRoundHiScore(round));
+            HiScoreButton btn = new HiScoreButton(this.getRoundHiScore(round).get(i), this.font);
+            btn.padding = new Padding(10);
+            this.root.add(btn);
+        }
+        for(int i = 0; i < 5 - this.getRoundHiScore(round).size(); i++) {
+            Button btn = new Button("", this.font);
+            btn.padding = new Padding(10);
+            this.root.add(btn);
+        }
+
+        Button menu = new Button("Return", this.font);
+        menu.padding = new Padding(10);
+        menu.listener = new MouseListener() {
+            @Override
+            public void onMouseEvent(MouseEvent event) {
+                Tween.to(overlay, ColorAccessor.A, 1.f).target(1.f).start(Shroom.TWEEN);
+                Tween.to(overlay, ColorAccessor.A, 1.f).target(0.f).delay(1.f).start(Shroom.TWEEN);
+                Tween.call(new TweenCallback() {
+                    @Override
+                    public void onEvent(int i, BaseTween<?> baseTween) {
+                        Shroom.this.initHiScore();
+                    }
+                }).delay(1.f).start(Shroom.TWEEN);
+            }
+        };
+        this.root.add(menu);
+        this.root.layout();
+    }
+
     public void initHiScore() {
         this.root.clear();
-        //this.world.entities.clear();
+        this.currentTitle = this.hiscores;
+        this.world.entities.clear();
         this.inGame = false;
 
         for(int i = 5; i > 0; i--) {
             Button btn = new Button("Round " + (i), this.font);
             btn.padding = new Padding(10);
+            final int finalI = i;
             btn.listener = new MouseListener() {
                 @Override
                 public void onMouseEvent(MouseEvent event) {
@@ -98,8 +207,8 @@ public class Shroom extends Game {
                     Tween.to(overlay, ColorAccessor.A, 1.f).target(0.f).delay(1.f).start(Shroom.TWEEN);
                     Tween.call(new TweenCallback() {
                         @Override
-                        public void onEvent(int i, BaseTween<?> baseTween) {
-                            Shroom.this.initGame();
+                        public void onEvent(int type, BaseTween<?> baseTween) {
+                            Shroom.this.initHiScoreRound(finalI);
                         }
                     }).delay(1.f).start(Shroom.TWEEN);
                 }
@@ -139,9 +248,18 @@ public class Shroom extends Game {
             public boolean onKey(KeyEvent event) {
                 if(event.state == KeyEvent.KeyState.DOWN) {
                     if(event.key == Keyboard.KEY_RETURN) {
-                        if(Shroom.this.world.submit(tfield.str)) {
+                        if(!enteredName) {
+                            String[] themes = AssetManager.load("./assets/data/round" + Shroom.this.currentRound + ".txt", String[].class);
+                            for(int i = 0; i < themes.length; i++) {
+                                String str = themes[i];
+                                Shroom.this.world.entities.add(new TextEntity(Shroom.this.world, i * (800.f / themes.length), -20 * i, font, str));
+                            }
+                            name = tfield.str;
+                            enteredName = true;
+                        }
+                        if(Shroom.this.world.submit(Shroom.this, tfield.str)) {
                             Audio.play(Shroom.this.win);
-                            System.out.println("Success!");
+                            Shroom.this.score += 100;
                         } else {
                             Audio.play(Shroom.this.fail);
                             System.out.println("pone");
@@ -161,9 +279,9 @@ public class Shroom extends Game {
         button.listener = new MouseListener() {
             @Override
             public void onMouseEvent(MouseEvent event) {
-                if(Shroom.this.world.submit(tfield.str)) {
+                if(Shroom.this.world.submit(Shroom.this, tfield.str)) {
                     Audio.play(Shroom.this.win);
-                    System.out.println("Success!");
+                    Shroom.this.score += 100;
                 } else {
                     Audio.play(Shroom.this.fail);
                     System.out.println("pone");
@@ -175,12 +293,61 @@ public class Shroom extends Game {
         this.root.requestFocus(tfield);
         this.root.add(button);
         this.root.layout();
-        this.world.entities.add(new TextEntity(this.world, 200, 10, this.font, "mitch_"));
+    }
+
+    public void initRoundSelection() {
+        this.inGame = false;
+        this.world.entities.clear();
+        this.currentTitle = this.title;
+        this.root.clear();
+        for(int i = 5; i > 0; i--) {
+            Button btn = new Button("Round " + (i), this.font);
+            btn.padding = new Padding(10);
+            final int finalI = i;
+            btn.listener = new MouseListener() {
+                @Override
+                public void onMouseEvent(MouseEvent event) {
+                    Tween.to(overlay, ColorAccessor.A, 1.f).target(1.f).start(Shroom.TWEEN);
+                    Tween.to(overlay, ColorAccessor.A, 1.f).target(0.f).delay(1.f).start(Shroom.TWEEN);
+                    Tween.call(new TweenCallback() {
+                        @Override
+                        public void onEvent(int type, BaseTween<?> baseTween) {
+                            Shroom.this.time = 10.f;
+                            Shroom.this.finishing = false;
+                            Shroom.this.currentRound = finalI;
+                            Shroom.this.score = 0;
+                            Shroom.this.enteredName = false;
+                            Shroom.this.initGame();
+                        }
+                    }).delay(1.f).start(Shroom.TWEEN);
+                }
+            };
+            this.root.add(btn);
+        }
+
+        Button menu = new Button("Return", this.font);
+        menu.padding = new Padding(10);
+        menu.listener = new MouseListener() {
+            @Override
+            public void onMouseEvent(MouseEvent event) {
+                Tween.to(overlay, ColorAccessor.A, 1.f).target(1.f).start(Shroom.TWEEN);
+                Tween.to(overlay, ColorAccessor.A, 1.f).target(0.f).delay(1.f).start(Shroom.TWEEN);
+                Tween.call(new TweenCallback() {
+                    @Override
+                    public void onEvent(int i, BaseTween<?> baseTween) {
+                        Shroom.this.initMenu();
+                    }
+                }).delay(1.f).start(Shroom.TWEEN);
+            }
+        };
+        this.root.add(menu);
+        this.root.layout();
     }
 
     public void initMenu() {
         this.inGame = false;
         this.world.entities.clear();
+        this.currentTitle = this.title;
         this.root.clear();
         Button play = new Button("Play Game", this.font);
         play.padding = new Padding(10);
@@ -192,7 +359,7 @@ public class Shroom extends Game {
                 Tween.call(new TweenCallback() {
                     @Override
                     public void onEvent(int i, BaseTween<?> baseTween) {
-                        Shroom.this.initGame();
+                        Shroom.this.initRoundSelection();
                     }
                 }).delay(1.f).start(Shroom.TWEEN);
             }
@@ -224,23 +391,40 @@ public class Shroom extends Game {
         this.root.add(hiscore);
         this.root.add(quit);
         this.root.layout();
-
-        String[] themes = AssetManager.load("./assets/data/themes.txt", String[].class);
-        int half = themes.length / 2;
-        for(int i = 0; i < half; i++) {
-            for(int i1 = 0; i1 < themes.length - half; i1++) {
-                String str = themes[i+i1];
-                this.world.entities.add(new TextEntity(this.world, i1 * (800.f / themes.length)*2, (i-4) * (1200.f / themes.length)*2, this.font, str));
-            }
-        }
     }
 
-    double tenseconds = 10.f;
+    public void finishGame() {
+        HiScore hiScore = new HiScore(this.currentRound, this.name, this.score);
+        this.saveHiScore(hiScore);
+
+        this.hiScoreList.save("./assets/data/hiscores.json");
+        Tween.to(overlay, ColorAccessor.A, 1.f).target(1.f).start(Shroom.TWEEN);
+        Tween.to(overlay, ColorAccessor.A, 1.f).target(0.f).delay(1.f).start(Shroom.TWEEN);
+        Tween.call(new TweenCallback() {
+            @Override
+            public void onEvent(int i, BaseTween<?> baseTween) {
+                Shroom.this.initMenu();
+                Shroom.this.inGame = false;
+            }
+        }).delay(1.f).start(Shroom.TWEEN);
+    }
+
+    boolean finishing;
+    double time = 10.f;
 
     @Override
     public void update() {
         Shroom.TWEEN.update((float) (1. / 20.));
-        this.tenseconds -= 1. / 20.;
+        if(this.inGame && this.enteredName) {
+            this.time -= 1. / 40.;
+            if(this.time < 0) {
+                this.time = 0;
+                if(!this.finishing) {
+                    this.finishing = true;
+                    this.finishGame();
+                }
+            }
+        }
 
         for(int i = 0; i < 256; i++) {
             Shroom.keys[i] = Keyboard.isKeyDown(i);
@@ -290,9 +474,21 @@ public class Shroom extends Game {
         this.batch.start();
 
         this.world.draw(this.batch, lerp);
+        if(this.inGame) {
+            if(this.enteredName) {
+                DecimalFormat decimalFormat = new DecimalFormat("#.##");
+                this.toaster.title = decimalFormat.format(this.time);
+                this.toaster.layout();
+            } else {
+                this.toaster.title = "Enter a name to start the game";
+                this.toaster.layout();
+            }
+            this.toaster.x = 400 - this.toaster.width / 2;
+            this.toaster.draw(batch, lerp);
+        }
 
         if(!this.inGame) {
-            this.bigFont.draw(batch, this.settings.width / 2, this.settings.height / 2 - 135, Shroom.TITLE, Font.Orientation.CENTER);
+            this.bigFont.draw(batch, this.settings.width / 2, this.settings.height / 2 - 135, this.currentTitle, Font.Orientation.CENTER);
         }
 
         this.root.draw(this.batch, lerp);
