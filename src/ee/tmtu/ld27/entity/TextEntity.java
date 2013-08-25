@@ -5,7 +5,6 @@ import ee.tmtu.ld27.world.World;
 import ee.tmtu.libludum.graphics.Font;
 import ee.tmtu.libludum.graphics.SpriteBatch;
 import org.lwjgl.util.Color;
-import org.lwjgl.util.ReadableColor;
 
 public class TextEntity extends Entity {
 
@@ -22,7 +21,7 @@ public class TextEntity extends Entity {
         this.y = y;
         this.font = font;
         this.word = word;
-        this.weight = font.getWidth(word) / word.length() / (xrazy ? 2 : 4 * (float)(Math.random() * 4));
+        this.weight = font.getWidth(word) / word.length() / 2;
         this.rotation = (float) (Math.random() * 360.);
         this.rotationSpeed = this.weight * .0005f;
     }
@@ -46,9 +45,16 @@ public class TextEntity extends Entity {
         this.prevRotation = this.rotation;
         this.rotation += this.rotationSpeed;
         this.y += this.weight;
-        if(this.y - this.font.getWidth(this.word) - this.font.lineheight > 800) {
-            if(score) this.dead = true;
-            this.y = this.yPrev = -(this.font.lineheight + this.font.getWidth(this.word));
+        if(this.xrazy) {
+            if(this.y - this.font.getWidth(this.word) - this.font.lineheight > 800) {
+                if(score) this.dead = true;
+                this.y = this.yPrev = -(this.font.lineheight + this.font.getWidth(this.word));
+            }
+        } else {
+            if(this.y - 20 - this.font.lineheight > 800) {
+                if(score) this.dead = true;
+                this.y = this.yPrev = -(this.font.lineheight + this.font.getWidth(this.word));
+            }
         }
     }
 

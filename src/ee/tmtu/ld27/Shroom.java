@@ -274,7 +274,7 @@ public class Shroom extends Game {
                                 String[] themes = AssetManager.load("./assets/data/round" + Shroom.this.currentRound + ".txt", String[].class);
                                 for(int i = 0; i < themes.length; i++) {
                                     String str = themes[i];
-                                    Shroom.this.world.entities.add(new TextEntity(Shroom.this.world, i * (800.f / themes.length), -20 * i, font, str));
+                                    Shroom.this.world.entities.add(new TextEntity(Shroom.this.world, i * (800.f / themes.length), -600 * (float)Math.random(), font, str));
                                 }
                                 name = tfield.str;
                                 enteredName = true;
