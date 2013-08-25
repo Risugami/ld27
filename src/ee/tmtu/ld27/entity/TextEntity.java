@@ -4,6 +4,8 @@ import ee.tmtu.ld27.Shroom;
 import ee.tmtu.ld27.world.World;
 import ee.tmtu.libludum.graphics.Font;
 import ee.tmtu.libludum.graphics.SpriteBatch;
+import org.lwjgl.util.Color;
+import org.lwjgl.util.ReadableColor;
 
 public class TextEntity extends Entity {
 
@@ -13,8 +15,10 @@ public class TextEntity extends Entity {
     public Font font;
     public String word;
 
-    public TextEntity(World world, Font font, String word) {
+    public TextEntity(World world, float x, float y, Font font, String word) {
         super(world);
+        this.x = x;
+        this.y = y;
         this.font = font;
         this.word = word;
         this.weight = font.getWidth(word) / word.length() / 2;
@@ -29,11 +33,12 @@ public class TextEntity extends Entity {
         this.prevRotation = this.rotation;
         this.rotation += this.rotationSpeed;
         this.y += this.weight;
+        if(this.y - this.font.getWidth(this.word) - this.font.lineheight > 800) this.y = this.yPrev = -(this.font.lineheight + this.font.getWidth(this.word));
     }
 
     @Override
     public void draw(SpriteBatch batch, double lerp) {
-        this.font.draw(batch, Shroom.lerp(this.xPrev, this.x, lerp), Shroom.lerp(this.yPrev, this.y, lerp), Shroom.lerp(this.prevRotation, this.rotation, lerp), this.word);
+        this.font.draw(batch, Shroom.lerp(this.xPrev, this.x, lerp), Shroom.lerp(this.yPrev, this.y, lerp), (float)Math.sin(Shroom.lerp(this.prevRotation, this.rotation, lerp)), this.word, new Color(251, 201, 148, 128));
     }
 
 }
